@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseInterceptors } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { FilterDto } from 'src/helpers/pagination/dto/filter.dto';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('projects')
 export class ProjectsController {
@@ -13,8 +15,11 @@ export class ProjectsController {
   }
 
   @Get()
-  findAll() {
-    return this.projectsService.findAll();
+  @CacheTTL(30000)
+  @UseInterceptors(CacheInterceptor)
+  async findAll(@Query() filter?: FilterDto) {
+    console.log('Buscando projetos....')
+    return this.projectsService.findAllPaginated(filter);
   }
 
   @Get(':id')
