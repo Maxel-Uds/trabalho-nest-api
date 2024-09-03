@@ -8,24 +8,33 @@ import { ConfigModule } from './typeorm/modules/config/config.module';
 import { PaginationModule } from './helpers/pagination/pagination.module';
 import { HelpersModule } from './helpers/helpers.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import * as redisStore from "cache-manager-redis-store";
+import { AuthModule } from './auth/auth.module';
+import { APP_GUARD } from "@nestjs/core";
+import { AuthGuardService } from './auth/auth-guard/auth-guard.service';
 
 @Module({
   imports: [
-    ProjectsModule, 
-    UsersModule, 
-    TasksModule, 
-    ConfigModule, 
-    PaginationModule, 
+    ProjectsModule,
+    UsersModule,
+    TasksModule,
+    ConfigModule,
+    PaginationModule,
     HelpersModule,
     CacheModule.register({
       isGlobal: true,
-      store: redisStore,
-      host: process.env.REDIS_HOST,
-      port: process.env.REDIS_PORT
-    })
+      // store: redisStore,
+      // host: process.env.REDIS_HOST,
+      // port: process.env.REDIS_PORT
+    }),
+    AuthModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuardService,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule { }

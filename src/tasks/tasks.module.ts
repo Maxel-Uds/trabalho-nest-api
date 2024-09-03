@@ -6,10 +6,14 @@ import { Task } from './entities/task.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProjectsService } from 'src/projects/projects.service';
 import { PaginationModule } from 'src/helpers/pagination/pagination.module';
+import { UsersModule } from 'src/users/users.module';
+import { ProjectsModule } from 'src/projects/projects.module';
+import { AuthGuardService } from 'src/auth/auth-guard/auth-guard.service';
+import { AuthService } from 'src/auth/auth.service';
 
 @Module({
-  imports: [PaginationModule, TypeOrmModule.forFeature([Task, Project])],
+  imports: [UsersModule, ProjectsModule, PaginationModule, TypeOrmModule.forFeature([Task, Project])],
   controllers: [TasksController],
-  providers: [TasksService, ProjectsService],
+  providers: [TasksService, AuthService, AuthGuardService]
 })
 export class TasksModule {}

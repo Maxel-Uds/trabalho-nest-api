@@ -1,5 +1,7 @@
+import { Exclude } from "class-transformer";
 import { Project } from "src/projects/entities/project.entity";
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm'
+import { User } from "src/users/entities/user.entity";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, JoinColumn } from 'typeorm'
 
 @Entity()
 export class Task {
@@ -18,6 +20,10 @@ export class Task {
     project: Project;
 	@Column({ name: "status", nullable: false })
 	status: TaskStatus;
+	@ManyToOne(() => User, (user) => user.tasks)
+	@JoinColumn()
+	@Exclude()
+	user: User;
 }
 
 export enum TaskStatus {

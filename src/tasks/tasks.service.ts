@@ -1,56 +1,67 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { CreateTaskDto } from "./dto/create-task.dto";
 import { UpdateTaskDto } from "./dto/update-task.dto";
 import { Task } from "./entities/task.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
+import { Project } from "../projects/entities/project.entity";
+import { User } from "../users/entities/user.entity";
+import { UsersService } from "src/users/users.service";
 import { ProjectsService } from "src/projects/projects.service";
-import { PaginationService } from "src/helpers/pagination/pagination.service";
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE, FilterDto } from "src/helpers/pagination/dto/filter.dto";
-
+import { plainToClass } from "class-transformer";
 
 @Injectable()
 export class TasksService {
+  
   constructor(
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
-    private readonly projectsService: ProjectsService,
-    private readonly paginationService: PaginationService,
-  ) {}
+    private readonly usersService: UsersService,
+    private readonly projectsService: ProjectsService
+  ) { }
 
-  async create(createTaskDto: CreateTaskDto) {
-    return await this.projectsService.findOne(createTaskDto.projectId)
-      .then(project => this.taskRepository.save({ ...createTaskDto, project }))
-      .catch(() => { throw new NotFoundException(`Projeto com ID ${createTaskDto.projectId} não encontrado`); });
+  async create(userEmail: string, createTaskDto: CreateTaskDto) {
+    const user = await this.usersService.findOneBy({ email: userEmail})
+    const project = await this.projectsService.findOrFail(createTaskDto.projectId);
+
+    var taskSaved = this.taskRepository.save({
+      ...createTaskDto,
+      project,
+      user,
+    });
+
+    return plainToClass(Task, taskSaved);
   }
 
-  findAllPaginated(filter?: FilterDto) {
-    if (!filter) {
-      return this.paginationService.paginate(this.taskRepository, {
-        page: DEFAULT_PAGE,
-        pageSize: DEFAULT_PAGE_SIZE,
-      });
-    }
-      
-    return this.paginationService.paginate(this.taskRepository, {
-      page: filter.page,
-      pageSize: filter.pageSize,
+  async findAll(userEmail: string) {
+    const user = await this.usersService.findOneBy({ email: userEmail});
+
+    return this.taskRepository.find({
+      relations: ["project"],
+      where: { user },
     });
   }
 
-  findAll() {
-    return this.taskRepository.find();
+  async findOne(userEmail: string, id: number) {
+    const user = await this.usersService.findOneBy({ email: userEmail});
+
+    return this.taskRepository.find({
+      where: { id, user },
+      relations: ["project"],
+    });
   }
 
-  findOne(id: number) {
-    return this.taskRepository.findOneBy({ id });
-  }
-
-  update(id: number, updateTaskDto: UpdateTaskDto) {
+  async update(userEmail: string, id: number, updateTaskDto: UpdateTaskDto) {
+    const user = await this.usersService.findOneBy({ email: userEmail});
+    
+    const task = this.taskRepository.findOneByOrFail({ id, user });
+    if (!task) {
+      throw new UnauthorizedException();
+    }
     return this.taskRepository.update(id, updateTaskDto);
   }
 
   remove(id: number) {
-    return this.taskRepository.delete(id);
+    return this.taskRepository.softDelete(id);
   }
 }

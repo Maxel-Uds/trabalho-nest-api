@@ -1,5 +1,7 @@
+import { Exclude } from "class-transformer";
 import { Task } from "src/tasks/entities/task.entity";
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm'
+import { User } from "src/users/entities/user.entity";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm'
 
 @Entity()
 export class Project {
@@ -11,4 +13,8 @@ export class Project {
     description: string;
     @OneToMany(() => Task, (task) => task.project)
     tasks: Task[];
+    @Exclude()
+    @ManyToOne(() => User, (user) => user.projects)
+    @JoinColumn()
+    user: User;
 }
